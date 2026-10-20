@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Olivetta Ristorante - Menú, Promociones & Eventos</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        olive: {
+                            900: '#1E281E',
+                            800: '#2D3B2D',
+                            700: '#3A4D39',
+                            600: '#4A6148',
+                            100: '#EAEFE9',
+                            50: '#F4F7F4'
+                        },
+                        cream: {
+                            50: '#FDFBF7',
+                            100: '#F9F5EC',
+                            200: '#F2EBDC',
+                            300: '#E8DCC4'
+                        },
+                        gold: {
+                            300: '#F3DE8A',
+                            400: '#E5C158',
+                            500: '#D4AF37',
+                            600: '#B89320'
+                        },
+                        terracotta: {
+                            500: '#C86D51',
+                            600: '#B0563C'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Montserrat"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FDFBF7;
+            font-family: 'Montserrat', sans-serif;
+            color: #2D3B2D;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+        }
+        h1, h2, h3, h4, .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .gold-gradient {
+            background: linear-gradient(135deg, #D4AF37 0%, #EDD075 50%, #B89320 100%);
+        }
+        .olive-gradient {
+            background: linear-gradient(180deg, #2D3B2D 0%, #1E281E 100%);
+        }
+        .flying-dish {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #D4AF37;
+            box-shadow: 0 10px 25px rgba(212, 175, 55, 0.6), 0 0 15px rgba(212, 175, 55, 0.8);
+            transition: transform 0.8s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.8s ease-out;
+            animation: pulseGlow 0.8s infinite alternate;
+        }
+        @keyframes pulseGlow {
+            0% { filter: drop-shadow(0 0 5px #D4AF37); }
+            100% { filter: drop-shadow(0 0 18px #EDD075); }
+        }
+        @keyframes cartBump {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.25) rotate(-6deg); }
+            70% { transform: scale(0.9) rotate(3deg); }
+            100% { transform: scale(1); }
+        }
+        .cart-bump {
+            animation: cartBump 0.45s ease-out;
+        }
+        .sparkle-particle {
+            position: fixed;
+            z-index: 9998;
+            pointer-events: none;
+            background: radial-gradient(circle, #FFF 10%, #D4AF37 80%);
+            border-radius: 50%;
+            animation: sparkleFade 0.6s linear forwards;
+        }
+        @keyframes sparkleFade {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.2) translate(var(--dx), var(--dy)); }
+        }
+    </style>
+</head>
+<body class="bg-cream-50 text-olive-800 pb-32 sm:pb-28 antialiased selection:bg-gold-500 selection:text-white min-h-full flex flex-col">
+
+    <!-- HEADER / BRANDING -->
+    <header class="sticky top-0 z-30 olive-gradient text-cream-50 shadow-lg">
+        <div class="bg-black/40 px-3 sm:px-4 py-1 text-[11px] sm:text-xs border-b border-gold-500/20 flex justify-between items-center max-w-4xl mx-auto">
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <div class="flex items-center gap-1 sm:gap-1.5 bg-gold-500/10 border border-gold-500/40 text-gold-400 px-2.5 py-0.5 rounded-full">
+                    <span class="relative flex h-2 w-2">
+                        <span id="bcv-pulse" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span id="bcv-dot" class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="font-semibold text-[10px] sm:text-xs">BCV: <span id="bcv-rate-display">Bs. --,--</span></span>
+                </div>
+                <button onclick="fetchBCVRate(true)" title="Sincronizar Tasa BCV" class="text-gold-400 hover:text-gold-200 transition-colors p-1">
+                    <i id="bcv-refresh-icon" class="fa-solid fa-rotate-right text-[10px] sm:text-[11px]"></i>
+                </button>
+            </div>
+
+            <button onclick="requestAdminAccess()" class="flex items-center gap-1 sm:gap-1.5 bg-olive-700 hover:bg-olive-600 text-cream-100 border border-gold-500/30 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium transition-all">
+                <i class="fa-solid fa-lock text-[9px] sm:text-[10px] text-gold-400"></i>
+                <span class="hidden sm:inline">Administración</span>
+                <span class="sm:hidden">Admin</span>
+            </button>
+        </div>
+
+        <div class="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3.5 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 sm:gap-3.5">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-gold-500/80 p-0.5 overflow-hidden shadow-inner bg-olive-800 flex items-center justify-center shrink-0">
+                    <img src="logo.olivetta.jpg" alt="Logo Olivetta" class="w-full h-full object-cover rounded-full" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'font-serif italic font-bold text-xl sm:text-2xl text-gold-400\'>O</span>';">
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-2xl font-bold tracking-wide text-cream-50 font-serif leading-tight">
+                        Olivetta Ristorante
+                    </h1>
+                    <p class="text-[10px] sm:text-xs text-gold-400 tracking-wider uppercase font-medium">
+                        Lechería • Auténtica Cocina Italiana
+                    </p>
+                </div>
+            </div>
+            
+            <button id="cart-header-btn" onclick="openCartModal()" class="relative p-2.5 sm:p-3 rounded-full bg-olive-700 text-gold-400 border border-gold-500/40 hover:bg-olive-600 transition-all shrink-0 active:scale-95">
+                <i class="fa-solid fa-bag-shopping text-lg sm:text-xl"></i>
+                <span id="header-cart-count" class="absolute -top-1 -right-1 bg-terracotta-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-olive-800 scale-0 transition-transform duration-200">0</span>
+            </button>
+        </div>
+
+        <div class="max-w-4xl mx-auto px-2 sm:px-4 border-t border-gold-500/15 flex justify-around sm:justify-center sm:gap-10 text-xs font-semibold uppercase tracking-wider">
+            <button onclick="switchMainTab('menu')" id="nav-tab-menu" class="py-2.5 px-3 text-gold-400 border-b-2 border-gold-500 transition-all flex items-center gap-1.5 font-bold">
+                <i class="fa-solid fa-utensils text-xs"></i>
+                <span>Menú</span>
+            </button>
+            <button onclick="switchMainTab('promos')" id="nav-tab-promos" class="py-2.5 px-3 text-cream-200/70 border-b-2 border-transparent hover:text-cream-100 transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-tags text-xs"></i>
+                <span>Promos</span>
+                <span id="badge-promo-count" class="bg-terracotta-500 text-white text-[9px] px-1.5 py-0.2 rounded-full hidden">0</span>
+            </button>
+            <button onclick="switchMainTab('events')" id="nav-tab-events" class="py-2.5 px-3 text-cream-200/70 border-b-2 border-transparent hover:text-cream-100 transition-all flex items-center gap-1.5">
+                <i class="fa-solid fa-calendar-star text-xs"></i>
+                <span>Eventos</span>
+                <span id="badge-event-count" class="bg-gold-500 text-olive-800 text-[9px] px-1.5 py-0.2 rounded-full hidden">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- HERO BANNER -->
+    <section class="max-w-4xl mx-auto px-3 sm:px-4 pt-3 sm:pt-4 w-full">
+        <div class="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg border border-gold-500/20 text-cream-50 p-4 sm:p-6 flex flex-col justify-end min-h-[140px] sm:min-h-[170px]" style="background: linear-gradient(180deg, rgba(45, 59, 45, 0.25) 0%, rgba(20, 26, 20, 0.92) 100%), url('rest.olivetta.jpeg') center/cover no-repeat;">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="inline-block bg-gold-500 text-olive-900 font-bold text-[9px] sm:text-[10px] uppercase tracking-widest px-2.5 py-0.5 rounded-full shadow">
+                    Lechería, Anzoátegui
+                </span>
+                <span class="text-emerald-400 text-[10px] sm:text-xs font-semibold flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded-full">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Abierto Ahora
+                </span>
+            </div>
+            <h2 class="text-xl sm:text-3xl font-serif font-bold text-cream-50 drop-shadow-md">Olivetta Ristorante</h2>
+            <p class="text-xs sm:text-sm text-cream-200/90 mt-1 max-w-xl leading-relaxed drop-shadow">
+                Pedidos directos a WhatsApp para Delivery, Pick-Up o Reserva de Mesa.
+            </p>
+        </div>
+    </section>
+
+    <!-- CONTENT SECTIONS -->
+    <main class="max-w-4xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6 w-full flex-1">
+        
+        <!-- SECTION 1: MENU -->
+        <div id="section-menu">
+            <div class="space-y-3 mb-5">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-olive-800/40 text-xs sm:text-sm"></i>
+                    <input type="text" id="search-input" oninput="filterMenu()" placeholder="Buscar platillo por nombre o ingrediente..." 
+                        class="w-full pl-9 pr-4 py-2.5 sm:py-3 bg-white border border-cream-300 rounded-xl sm:rounded-2xl text-xs sm:text-sm text-olive-800 placeholder-olive-800/40 focus:outline-none focus:border-gold-500 shadow-sm transition-all">
+                </div>
+
+                <!-- Category Horizontal Scroll with Smaller Compact Buttons -->
+                <div class="overflow-x-auto hide-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0 flex gap-1.5 py-1" id="categories-container">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-3.5">
+                <h3 id="current-category-title" class="text-base sm:text-xl font-serif font-bold text-olive-800 border-l-4 border-gold-500 pl-2.5">
+                    Menú Completo
+                </h3>
+                <span id="dishes-count" class="text-xs sm:text-sm text-olive-700/70 font-medium">0 platos</span>
+            </div>
+
+            <div id="dishes-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+
+        <!-- SECTION 2: PROMOCIONES -->
+        <div id="section-promos" class="hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base sm:text-xl font-serif font-bold text-olive-800 border-l-4 border-gold-500 pl-2.5">
+                    Promociones Especiales
+                </h3>
+                <button onclick="requestAdminAccess('promos')" class="text-xs sm:text-sm text-gold-600 hover:text-gold-500 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-plus-circle"></i> Nueva Promo
+                </button>
+            </div>
+            <div id="promos-container" class="space-y-4"></div>
+        </div>
+
+        <!-- SECTION 3: EVENTOS -->
+        <div id="section-events" class="hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base sm:text-xl font-serif font-bold text-olive-800 border-l-4 border-gold-500 pl-2.5">
+                    Próximos Eventos & Noches Especiales
+                </h3>
+                <button onclick="requestAdminAccess('events')" class="text-xs sm:text-sm text-gold-600 hover:text-gold-500 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-plus-circle"></i> Nuevo Evento
+                </button>
+            </div>
+            <div id="events-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5"></div>
+        </div>
+
+    </main>
+
+    <!-- FLOATING CART BOTTOM BAR -->
+    <div id="floating-cart-bar" class="fixed bottom-0 left-0 right-0 z-40 p-3 sm:p-4 transition-transform duration-300 translate-y-full bg-gradient-to-t from-cream-50 via-cream-50/90 to-transparent">
+        <div class="max-w-4xl mx-auto">
+            <button id="floating-cart-btn" onclick="openCartModal()" class="w-full olive-gradient text-cream-50 p-3 sm:p-4 rounded-2xl sm:rounded-3xl shadow-2xl border border-gold-500/50 flex items-center justify-between active:scale-[0.98] transition-all">
+                <div class="flex items-center gap-3">
+                    <div class="relative bg-gold-500 text-olive-900 font-bold w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center text-base sm:text-lg shadow">
+                        <i class="fa-solid fa-basket-shopping"></i>
+                        <span id="cart-floating-badge" class="absolute -top-1.5 -right-1.5 bg-terracotta-500 text-white text-[10px] sm:text-xs font-bold w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center border-2 border-olive-800">0</span>
+                    </div>
+                    <div class="text-left">
+                        <div class="text-[10px] sm:text-xs text-gold-400 font-bold uppercase tracking-wider">Ver Mi Pedido</div>
+                        <div class="text-xs sm:text-sm text-cream-200/90" id="floating-items-text">0 ítems seleccionados</div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-base sm:text-xl font-bold text-gold-400 font-serif" id="floating-total-usd">$0.00</div>
+                    <div class="text-[10px] sm:text-xs text-cream-200/80" id="floating-total-ves">Bs. 0.00</div>
+                </div>
+            </button>
+        </div>
+    </div>
+
+    <!-- CART DRAWER / MODAL -->
+    <div id="cart-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-cream-50 w-full max-w-2xl rounded-t-3xl max-h-[90vh] flex flex-col shadow-2xl border-t border-gold-500/40 transform translate-y-full transition-transform duration-300" id="cart-modal-content">
+            <div class="p-3.5 sm:p-4 border-b border-cream-200 flex items-center justify-between olive-gradient text-cream-50 rounded-t-3xl">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-receipt text-gold-400 text-lg sm:text-xl"></i>
+                    <h3 class="font-serif font-bold text-base sm:text-xl text-cream-50">Resumen de Pedido</h3>
+                </div>
+                <button onclick="closeCartModal()" class="w-8 h-8 rounded-full bg-olive-700 text-cream-200 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-3.5 sm:p-5 overflow-y-auto flex-1 space-y-4">
+                <div>
+                    <h4 class="text-xs font-semibold text-olive-700/70 uppercase tracking-wider mb-2">Platillos / Promos en Carrito</h4>
+                    <div id="cart-items-container" class="space-y-2"></div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-olive-800 mb-1">
+                        <i class="fa-solid fa-comment-dots text-gold-600 mr-1"></i> Notas para la Cocina
+                    </label>
+                    <textarea id="order-notes" rows="2" placeholder="Ej: Sin sal, aderezo aparte, alergias..." 
+                        class="w-full p-2.5 text-xs sm:text-sm bg-white border border-cream-300 rounded-xl focus:ring-1 focus:ring-gold-500 focus:outline-none text-olive-800"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-olive-800 mb-2">
+                        <i class="fa-solid fa-truck-ramp-box text-gold-600 mr-1"></i> Tipo de Entrega / Servicio
+                    </label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button type="button" onclick="setServiceType('delivery')" id="btn-service-delivery" 
+                            class="p-2 sm:p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 border-gold-500 bg-olive-800 text-gold-400 font-bold">
+                            <i class="fa-solid fa-motorcycle text-sm sm:text-base"></i>
+                            <span class="text-[10px] sm:text-xs leading-tight">Delivery</span>
+                        </button>
+                        <button type="button" onclick="setServiceType('pickup')" id="btn-service-pickup" 
+                            class="p-2 sm:p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 border-cream-300 bg-white text-olive-800">
+                            <i class="fa-solid fa-bag-shopping text-sm sm:text-base"></i>
+                            <span class="text-[10px] sm:text-xs leading-tight">Pick-up</span>
+                        </button>
+                        <button type="button" onclick="setServiceType('table')" id="btn-service-table" 
+                            class="p-2 sm:p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 border-cream-300 bg-white text-olive-800">
+                            <i class="fa-solid fa-utensils text-sm sm:text-base"></i>
+                            <span class="text-[10px] sm:text-xs leading-tight">Mesa/Reserva</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2.5 bg-cream-100 p-3 sm:p-4 rounded-2xl border border-cream-200">
+                    <h4 class="text-xs font-bold text-olive-800 uppercase tracking-wider">Datos del Cliente</h4>
+                    <div>
+                        <label class="block text-[11px] sm:text-xs font-medium text-olive-800 mb-1">Nombre Completo *</label>
+                        <input type="text" id="customer-name" placeholder="Ej: María Rodríguez" 
+                            class="w-full p-2 sm:p-2.5 text-xs sm:text-sm bg-white border border-cream-300 rounded-lg sm:rounded-xl focus:outline-none focus:border-gold-500">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] sm:text-xs font-medium text-olive-800 mb-1">Teléfono WhatsApp *</label>
+                            <input type="tel" id="customer-phone" placeholder="0414-1234567" 
+                                class="w-full p-2 sm:p-2.5 text-xs sm:text-sm bg-white border border-cream-300 rounded-lg sm:rounded-xl focus:outline-none focus:border-gold-500">
+                        </div>
+                        <div id="field-address-container">
+                            <label class="block text-[11px] sm:text-xs font-medium text-olive-800 mb-1" id="label-address">Dirección de Entrega *</label>
+                            <input type="text" id="customer-address" placeholder="Ej: Las Villas, Av. Principal" 
+                                class="w-full p-2 sm:p-2.5 text-xs sm:text-sm bg-white border border-cream-300 rounded-lg sm:rounded-xl focus:outline-none focus:border-gold-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-olive-800 mb-2">
+                        <i class="fa-solid fa-credit-card text-gold-600 mr-1"></i> Método de Pago
+                    </label>
+                    <select id="payment-method" class="w-full p-2.5 text-xs sm:text-sm bg-white border border-cream-300 rounded-xl focus:outline-none focus:border-gold-500 text-olive-800 font-medium">
+                        <option value="Pago Móvil (VES)">📱 Pago Móvil (Tasa BCV)</option>
+                        <option value="Efectivo USD">💵 Efectivo USD</option>
+                        <option value="Punto de Venta">💳 Punto de Venta en Local / Delivery</option>
+                    </select>
+                </div>
+
+                <div class="border-t border-cream-300 pt-3 space-y-1.5 text-xs sm:text-sm">
+                    <div class="flex justify-between text-olive-700/80">
+                        <span>Subtotal:</span>
+                        <span id="summary-subtotal-usd" class="font-semibold">$0.00</span>
+                    </div>
+                    <div class="flex justify-between text-olive-700/80" id="row-delivery-fee">
+                        <span>Delivery Lechería:</span>
+                        <span id="summary-delivery-usd" class="font-semibold">$3.00</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-olive-600 italic">
+                        <span>Tasa BCV Aplicada:</span>
+                        <span id="summary-bcv-rate">Bs. --,-- / $</span>
+                    </div>
+                    <div class="border-t border-cream-300 pt-2 flex justify-between items-end">
+                        <div>
+                            <span class="text-sm sm:text-base font-bold text-olive-800 block">Total a Pagar</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xl sm:text-2xl font-bold font-serif text-gold-600" id="summary-total-usd">$0.00</div>
+                            <div class="text-xs sm:text-sm font-semibold text-olive-700" id="summary-total-ves">Bs. 0.00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3.5 sm:p-4 border-t border-cream-200 bg-cream-100/60 rounded-b-3xl">
+                <button onclick="sendOrderToWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 sm:py-3.5 px-4 rounded-xl sm:rounded-2xl shadow-lg flex items-center justify-center gap-2 active:scale-[0.99] transition-all">
+                    <i class="fa-brands fa-whatsapp text-2xl"></i>
+                    <span class="text-xs sm:text-sm">Enviar Pedido por WhatsApp</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PASSWORD LOGIN MODAL -->
+    <div id="admin-login-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-cream-50 w-full max-w-sm rounded-2xl p-5 shadow-2xl border border-gold-500/30">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-serif font-bold text-lg text-olive-800 flex items-center gap-2">
+                    <i class="fa-solid fa-user-shield text-gold-600"></i> Acceso Administrador
+                </h3>
+                <button onclick="closeAdminLoginModal()" class="text-olive-600 hover:text-olive-800">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p class="text-xs text-olive-700/80 mb-4">
+                Ingrese la clave de seguridad para administrar el menú, promociones y eventos de Olivetta Ristorante.
+            </p>
+            <form onsubmit="verifyAdminPassword(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-olive-800 mb-1">Contraseña de Acceso</label>
+                    <input type="password" id="admin-pass-input" placeholder="••••••••" required 
+                        class="w-full px-3 py-2 text-sm text-olive-800 bg-white border border-gold-500/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-gold-500">
+                    <p class="text-[10px] text-olive-600/70 mt-1">Clave por defecto: <code class="bg-cream-200 px-1 py-0.5 rounded font-bold">olivetta2026</code></p>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeAdminLoginModal()" class="w-1/2 py-2 text-xs font-semibold text-olive-700 bg-cream-200 rounded-xl hover:bg-cream-300">Cancelar</button>
+                    <button type="submit" class="w-1/2 py-2 text-xs font-bold text-cream-50 bg-olive-800 rounded-xl hover:bg-olive-700 shadow">Ingresar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN ADMIN PANEL MODAL -->
+    <div id="admin-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-cream-50 w-full max-w-2xl rounded-2xl max-h-[92vh] flex flex-col shadow-2xl border border-gold-500/30">
+            <div class="p-3.5 sm:p-4 olive-gradient text-cream-50 rounded-t-2xl flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-gold-400"></i>
+                    <h3 class="font-serif font-bold text-base sm:text-lg text-cream-50">Panel de Administración</h3>
+                </div>
+                <button onclick="closeAdminModal()" class="w-8 h-8 rounded-full bg-olive-700 text-cream-200 hover:text-white flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="flex border-b border-cream-200 bg-cream-100 text-xs font-bold text-olive-800">
+                <button onclick="switchAdminTab('dishes')" id="admin-tab-dishes" class="flex-1 py-2.5 text-center border-b-2 border-gold-500 bg-white">Platos</button>
+                <button onclick="switchAdminTab('promos')" id="admin-tab-promos" class="flex-1 py-2.5 text-center border-b-2 border-transparent hover:bg-cream-200">Promociones</button>
+                <button onclick="switchAdminTab('events')" id="admin-tab-events" class="flex-1 py-2.5 text-center border-b-2 border-transparent hover:bg-cream-200">Eventos</button>
+            </div>
+
+            <div class="p-3.5 sm:p-5 overflow-y-auto flex-1 space-y-6">
+                <!-- TAB 1: DISHES MANAGER -->
+                <div id="admin-sec-dishes">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-bold text-olive-800 uppercase tracking-wider">Gestión de Platos</h4>
+                        <button onclick="resetDishForm()" class="text-xs bg-olive-800 text-gold-400 px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-plus text-[10px]"></i> Nuevo Plato
+                        </button>
+                    </div>
+
+                    <form onsubmit="saveDishForm(event)" class="bg-white p-3.5 rounded-xl border border-cream-300 space-y-3 mb-4 shadow-sm">
+                        <input type="hidden" id="form-dish-id">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] font-bold text-olive-800 mb-1">Nombre del Plato *</label>
+                                <input type="text" id="form-dish-name" placeholder="Ej: Tagliatelle al Tartufo" required class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none focus:border-gold-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-olive-800 mb-1">Categoría *</label>
+                                <select id="form-dish-category" required class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none focus:border-gold-500">
+                                    <option value="desayunos">Desayunos</option>
+                                    <option value="entradas">Antipasti (Entradas)</option>
+                                    <option value="pastas">Pastas Artesanales</option>
+                                    <option value="pizzas">Pizzas al Horno</option>
+                                    <option value="fuertes">Carnes y Pescados</option>
+                                    <option value="snacks">Snacks</option>
+                                    <option value="postres">Dolci (Postres)</option>
+                                    <option value="bebidas">Cocteles y Bebidas</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] font-bold text-olive-800 mb-1">Precio en Dólares ($ USD) *</label>
+                                <input type="number" step="0.5" id="form-dish-price" placeholder="18.50" required class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none focus:border-gold-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-olive-800 mb-1">Etiqueta opcional</label>
+                                <input type="text" id="form-dish-tag" placeholder="Ej: Recomendado / Vegetariano" class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none focus:border-gold-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-olive-800 mb-1">URL de Imagen (o sube tu imagen)</label>
+                            <div class="flex gap-2">
+                                <input type="url" id="form-dish-image" placeholder="https://..." class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none focus:border-gold-500">
+                                <label class="cursor-pointer bg-cream-200 hover:bg-cream-300 text-olive-800 px-3 py-2 rounded-lg text-xs font-semibold flex items-center shrink-0">
+                                    <i class="fa-solid fa-upload mr-1"></i> Subir
+                                    <input type="file" accept="image/*" onchange="handleImageUpload(event, 'form-dish-image')" class="hidden">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-olive-800 mb-1">Descripción / Ingredientes</label>
+                            <textarea id="form-dish-desc" rows="2" placeholder="Ingredientes y modo de preparación..." class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none focus:border-gold-500"></textarea>
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-1">
+                            <button type="button" onclick="resetDishForm()" class="px-3 py-1.5 text-xs text-olive-700 bg-cream-100 rounded-lg">Limpiar</button>
+                            <button type="submit" class="px-4 py-1.5 text-xs font-bold text-cream-50 bg-gold-600 rounded-lg hover:bg-gold-500 shadow">Guardar Plato</button>
+                        </div>
+                    </form>
+
+                    <div id="admin-dishes-list" class="space-y-2"></div>
+                </div>
+
+                <!-- TAB 2: PROMOS MANAGER -->
+                <div id="admin-sec-promos" class="hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-bold text-olive-800 uppercase tracking-wider">Gestión de Promociones</h4>
+                        <button onclick="resetPromoForm()" class="text-xs bg-olive-800 text-gold-400 px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-plus text-[10px]"></i> Nueva Promo
+                        </button>
+                    </div>
+
+                    <form onsubmit="savePromoForm(event)" class="bg-white p-3.5 rounded-xl border border-cream-300 space-y-3 mb-4 shadow-sm">
+                        <input type="hidden" id="form-promo-id">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] font-bold text-olive-800 mb-1">Título de la Promoción *</label>
+                                <input type="text" id="form-promo-title" placeholder="Ej: 2x1 en Pizzas Margherita" required class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-olive-800 mb-1">Precio Promocional ($ USD) *</label>
+                                <input type="number" step="0.5" id="form-promo-price" placeholder="20.00" required class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-olive-800 mb-1">URL de Imagen / Banner</label>
+                            <div class="flex gap-2">
+                                <input type="url" id="form-promo-image" placeholder="https://..." class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
+                                <label class="cursor-pointer bg-cream-200 hover:bg-cream-300 text-olive-800 px-3 py-2 rounded-lg text-xs font-semibold flex items-center shrink-0">
+                                    <i class="fa-solid fa-upload mr-1"></i> Subir
+                                    <input type="file" accept="image/*" onchange="handleImageUpload(event, 'form-promo-image')" class="hidden">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-olive-800 mb-1">Descripción de la Promo</label>
+                            <textarea id="form-promo-desc" rows="2" placeholder="Detalles de la promoción..." class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none"></textarea>
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-1">
+                            <button type="button" onclick="resetPromoForm()" class="px-3 py-1.5 text-xs text-olive-700 bg-cream-100 rounded-lg">Limpiar</button>
+                            <button type="submit" class="px-4 py-1.5 text-xs font-bold text-cream-50 bg-gold-600 rounded-lg hover:bg-gold-500 shadow">Guardar Promo</button>
+                        </div>
+                    </form>
+
+                    <div id="admin-promos-list" class="space-y-2"></div>
+                </div>
+
+                <!-- TAB 3: EVENTS MANAGER -->
+                <div id="admin-sec-events" class="hidden">
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-bold text-olive-800 uppercase tracking-wider">Gestión de Eventos</h4>
+                        <button onclick="resetEventForm()" class="text-xs bg-olive-800 text-gold-400 px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-plus text-[10px]"></i> Nuevo Evento
+                        </button>
+                    </div>
+
+                    <form onsubmit="saveEventForm(event)" class="bg-white p-3.5 rounded-xl border border-cream-300 space-y-3 mb-4 shadow-sm">
+                        <input type="hidden" id="form-event-id">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] font-bold text-olive-800 mb-1">Nombre del Evento *</label>
+                                <input type="text" id="form-event-title" placeholder="Ej: Noche de Saxo & Pasta" required class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-olive-800 mb-1">Fecha & Hora *</label>
+                                <input type="text" id="form-event-date" placeholder="Ej: Viernes 24 Oct • 8:00 PM" required class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[11px] font-bold text-olive-800 mb-1">Precio Reserva / Cover ($ USD)</label>
+                                <input type="number" step="1" id="form-event-price" placeholder="0 (Si es libre)" class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-olive-800 mb-1">URL Imagen Banner</label>
+                                <div class="flex gap-2">
+                                    <input type="url" id="form-event-image" placeholder="https://..." class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
+                                    <label class="cursor-pointer bg-cream-200 hover:bg-cream-300 text-olive-800 px-2.5 py-2 rounded-lg text-xs font-semibold flex items-center shrink-0">
+                                        <i class="fa-solid fa-upload"></i>
+                                        <input type="file" accept="image/*" onchange="handleImageUpload(event, 'form-event-image')" class="hidden">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-bold text-olive-800 mb-1">Descripción del Evento</label>
+                            <textarea id="form-event-desc" rows="2" placeholder="Detalles de la velada..." class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none"></textarea>
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-1">
+                            <button type="button" onclick="resetEventForm()" class="px-3 py-1.5 text-xs text-olive-700 bg-cream-100 rounded-lg">Limpiar</button>
+                            <button type="submit" class="px-4 py-1.5 text-xs font-bold text-cream-50 bg-gold-600 rounded-lg hover:bg-gold-500 shadow">Guardar Evento</button>
+                        </div>
+                    </form>
+
+                    <div id="admin-events-list" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DISH DETAIL MODAL -->
+    <div id="dish-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-cream-50 w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gold-500/30 transform translate-y-8 transition-transform duration-300" id="dish-modal-content"></div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed top-5 right-5 z-50 bg-olive-900 text-cream-50 text-xs sm:text-sm px-4 py-3 rounded-2xl shadow-2xl border border-gold-500/50 transform translate-x-full transition-transform duration-300 flex items-center gap-2.5">
+        <i class="fa-solid fa-circle-check text-gold-400 text-base"></i>
+        <span id="toast-msg">Notificación</span>
+    </div>
+
+    <!-- APP JAVASCRIPT LOGIC -->
+    <script>
+        const ADMIN_PASSWORD_DEFAULT = 'olivetta2026';
+        let bcvRate = 36.50;
+        let bcvLastUpdated = null;
+        let activeCategory = 'all';
+        let searchQuery = '';
+        let cart = [];
+        let currentServiceType = 'delivery';
+        const deliveryFeeUSD = 3.00;
+        const restaurantWhatsAppNumber = '584240000000';
+
+        const BCV_API_ENDPOINTS = [
+            'https://ve.dolarapi.com/v1/dolares/oficial',
+            'https://pydolarvenezuela-api.vercel.app/api/v1/dollar?page=bcv',
+            'https://esdolar.app/api/bcv'
+        ];
+
+        let dishes = [];
+        let promos = [];
+        let events = [];
+
+        // Updated menu categories including Desayunos and Snacks with compact styling
+        const menuCategories = [
+            { id: 'all', name: 'Todos', icon: 'fa-utensils' },
+            { id: 'desayunos', name: 'Desayunos', icon: 'fa-egg' },
+            { id: 'entradas', name: 'Antipasti', icon: 'fa-cheese' },
+            { id: 'pastas', name: 'Pastas', icon: 'fa-bowl-food' },
+            { id: 'pizzas', name: 'Pizzas', icon: 'fa-pizza-slice' },
+            { id: 'fuertes', name: 'Carnes', icon: 'fa-drumstick-bite' },
+            { id: 'snacks', name: 'Snacks', icon: 'fa-burger' },
+            { id: 'postres', name: 'Dolci', icon: 'fa-ice-cream' },
+            { id: 'bebidas', name: 'Bebidas', icon: 'fa-wine-glass' }
+        ];
+
+        function loadStorageData() {
+            const savedDishes = localStorage.getItem('olivetta_dishes');
+            if (savedDishes) { try { dishes = JSON.parse(savedDishes); } catch(e) { dishes = []; } }
+            const savedPromos = localStorage.getItem('olivetta_promos');
+            if (savedPromos) { try { promos = JSON.parse(savedPromos); } catch(e) { promos = []; } }
+            const savedEvents = localStorage.getItem('olivetta_events');
+            if (savedEvents) { try { events = JSON.parse(savedEvents); } catch(e) { events = []; } }
+        }
+
+        function saveDishesStorage() { localStorage.setItem('olivetta_dishes', JSON.stringify(dishes)); }
+        function savePromosStorage() { localStorage.setItem('olivetta_promos', JSON.stringify(promos)); }
+        function saveEventsStorage() { localStorage.setItem('olivetta_events', JSON.stringify(events)); }
+
+        async function fetchBCVRate(manualTrigger = false) {
+            const refreshIcon = document.getElementById('bcv-refresh-icon');
+            const pulse = document.getElementById('bcv-pulse');
+            const dot = document.getElementById('bcv-dot');
+
+            if (refreshIcon) refreshIcon.classList.add('animate-spin');
+            let rateFound = false;
+
+            for (const url of BCV_API_ENDPOINTS) {
+                try {
+                    const response = await fetch(url, { cache: 'no-cache' });
+                    if (!response.ok) continue;
+                    const data = await response.json();
+                    let rate = null;
+                    if (data && typeof data.promedio === 'number') rate = data.promedio;
+                    else if (data && typeof data.price === 'number') rate = data.price;
+                    else if (data && data.moneda === 'USD' && typeof data.monto === 'number') rate = data.monto;
+                    else if (data && data.monedas && data.monedas.USD) rate = parseFloat(data.monedas.USD);
+
+                    if (rate && !isNaN(rate) && rate > 0) {
+                        bcvRate = rate;
+                        bcvLastUpdated = new Date();
+                        rateFound = true;
+                        localStorage.setItem('olivetta_bcv_cache', JSON.stringify({ rate: bcvRate, timestamp: bcvLastUpdated.toISOString() }));
+                        break;
+                    }
+                } catch (err) {}
+            }
+
+            if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+            if (pulse && dot) {
+                if (rateFound) {
+                    pulse.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
+                    dot.className = "relative inline-flex rounded-full h-2 w-2 bg-emerald-500";
+                    if (manualTrigger) showToast(`Tasa BCV actualizada: Bs. ${bcvRate.toFixed(2)}`);
+                } else {
+                    const cached = localStorage.getItem('olivetta_bcv_cache');
+                    if (cached) bcvRate = JSON.parse(cached).rate;
+                    pulse.className = "hidden";
+                    dot.className = "relative inline-flex rounded-full h-2 w-2 bg-amber-500";
+                    if (manualTrigger) showToast(`Tasa guardada: Bs. ${bcvRate.toFixed(2)}`);
+                }
+            }
+            updateBcvDisplay();
+            renderDishes();
+            renderPromos();
+            updateCartSummary();
+        }
+
+        function updateBcvDisplay() {
+            const display = document.getElementById('bcv-rate-display');
+            const summaryRate = document.getElementById('summary-bcv-rate');
+            const input = document.getElementById('bcv-input');
+            if (display) display.textContent = `Bs. ${bcvRate.toFixed(2)}`;
+            if (summaryRate) summaryRate.textContent = `Bs. ${bcvRate.toFixed(2)} / $`;
+            if (input) input.value = bcvRate.toFixed(2);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStorageData();
+            fetchBCVRate();
+            setInterval(fetchBCVRate, 300000);
+            renderCategories();
+            renderDishes();
+            renderPromos();
+            renderEvents();
+            updateBadges();
+        });
+
+        function switchMainTab(tab) {
+            ['menu', 'promos', 'events'].forEach(t => {
+                document.getElementById(`section-${t}`).classList.add('hidden');
+                document.getElementById(`nav-tab-${t}`).className = "py-2.5 px-3 text-cream-200/70 border-b-2 border-transparent hover:text-cream-100 transition-all flex items-center gap-1.5";
+            });
+            document.getElementById(`section-${tab}`).classList.remove('hidden');
+            document.getElementById(`nav-tab-${tab}`).className = "py-2.5 px-3 text-gold-400 border-b-2 border-gold-500 transition-all flex items-center gap-1.5 font-bold";
+        }
+
+        function updateBadges() {
+            const promoBadge = document.getElementById('badge-promo-count');
+            const eventBadge = document.getElementById('badge-event-count');
+            if (promos.length > 0) { promoBadge.textContent = promos.length; promoBadge.classList.remove('hidden'); } else { promoBadge.classList.add('hidden'); }
+            if (events.length > 0) { eventBadge.textContent = events.length; eventBadge.classList.remove('hidden'); } else { eventBadge.classList.add('hidden'); }
+        }
+
+        // Compact smaller category buttons implementation
+        function renderCategories() {
+            const container = document.getElementById('categories-container');
+            container.innerHTML = menuCategories.map(cat => `
+                <button onclick="selectCategory('${cat.id}')" 
+                    class="px-2.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1 border shrink-0 active:scale-95 ${
+                        activeCategory === cat.id 
+                        ? 'bg-gold-500 text-olive-900 border-gold-400 shadow-sm font-bold' 
+                        : 'bg-white text-olive-800 border-cream-300 hover:bg-cream-100'
+                    }">
+                    <i class="fa-solid ${cat.icon} text-[10px]"></i>
+                    <span>${cat.name}</span>
+                </button>
+            `).join('');
+        }
+
+        function selectCategory(catId) {
+            activeCategory = catId;
+            renderCategories();
+            renderDishes();
+            const catObj = menuCategories.find(c => c.id === catId);
+            document.getElementById('current-category-title').textContent = catObj ? catObj.name : 'Menú Completo';
+        }
+
+        function filterMenu() {
+            searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+            renderDishes();
+        }
+
+        function renderDishes() {
+            const container = document.getElementById('dishes-container');
+            const filtered = dishes.filter(dish => {
+                const matchesCat = (activeCategory === 'all' || dish.category === activeCategory);
+                const matchesSearch = dish.name.toLowerCase().includes(searchQuery) || (dish.description && dish.description.toLowerCase().includes(searchQuery));
+                return matchesCat && matchesSearch;
+            });
+
+            document.getElementById('dishes-count').textContent = `${filtered.length} plato${filtered.length !== 1 ? 's' : ''}`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12 px-4 bg-white/80 rounded-2xl border border-cream-200">
+                        <i class="fa-solid fa-utensils text-4xl text-olive-600/30 mb-3"></i>
+                        <p class="text-sm font-bold text-olive-800">No encontramos platillos</p>
+                        <p class="text-xs text-olive-600 mb-4">Selecciona otra categoría o añade platos desde el panel.</p>
+                        <button onclick="requestAdminAccess('dishes')" class="inline-flex items-center gap-1.5 bg-gold-500 hover:bg-gold-600 text-olive-900 font-bold text-xs px-4 py-2.5 rounded-xl shadow">
+                            <i class="fa-solid fa-plus-circle"></i> Agregar Plato (Admin)
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filtered.map(dish => {
+                const priceVES = (dish.priceUSD * bcvRate).toFixed(2);
+                const cartItem = cart.find(i => i.id === dish.id && i.type === 'dish');
+                const qtyInCart = cartItem ? cartItem.quantity : 0;
+                const fallbackImg = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80';
+                const dishImg = dish.image || fallbackImg;
+
+                return `
+                    <div id="dish-card-${dish.id}" class="bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm hover:shadow-md border border-cream-200/80 flex flex-col justify-between transition-all">
+                        <div>
+                            <div class="relative h-44 sm:h-48 overflow-hidden cursor-pointer bg-cream-100 group" onclick="openDishModal('${dish.id}')">
+                                <img id="dish-img-${dish.id}" src="${dishImg}" alt="${dish.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.src='${fallbackImg}'">
+                                ${dish.tag ? `<span class="absolute top-2.5 left-2.5 bg-gold-500 text-olive-900 text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase shadow">${dish.tag}</span>` : ''}
+                            </div>
+                            <div class="p-3.5 sm:p-4 cursor-pointer" onclick="openDishModal('${dish.id}')">
+                                <h4 class="font-serif font-bold text-base sm:text-lg text-olive-800 leading-snug">${dish.name}</h4>
+                                <p class="text-xs sm:text-sm text-olive-700/80 line-clamp-2 mt-1 leading-relaxed">${dish.description || 'Delicioso platillo preparado al momento.'}</p>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 sm:p-4 pt-0 flex items-center justify-between border-t border-cream-100 mt-1">
+                            <div>
+                                <span class="text-base sm:text-lg font-bold font-serif text-olive-800">$${dish.priceUSD.toFixed(2)}</span>
+                                <span class="text-[10px] sm:text-xs text-olive-600 block font-medium">Bs. ${priceVES}</span>
+                            </div>
+
+                            ${qtyInCart > 0 ? `
+                                <div class="flex items-center bg-cream-100 rounded-xl border border-gold-500/40 p-1 gap-2">
+                                    <button onclick="updateCartQuantity('${dish.id}', 'dish', -1)" class="w-7 h-7 rounded-lg bg-white text-olive-800 flex items-center justify-center font-bold text-xs"><i class="fa-solid fa-minus text-[10px]"></i></button>
+                                    <span class="font-bold text-xs text-olive-800 w-4 text-center">${qtyInCart}</span>
+                                    <button onclick="triggerFlyAndAdd(event, '${dish.id}', 'dish', 1, '${escapeHtml(dish.name)}', ${dish.priceUSD}, '${dishImg}')" class="w-7 h-7 rounded-lg bg-olive-800 text-cream-50 flex items-center justify-center font-bold text-xs"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                                </div>
+                            ` : `
+                                <button onclick="triggerFlyAndAdd(event, '${dish.id}', 'dish', 1, '${escapeHtml(dish.name)}', ${dish.priceUSD}, '${dishImg}')" class="bg-olive-800 hover:bg-olive-700 text-cream-50 text-xs font-semibold px-3 py-1.5 rounded-xl transition flex items-center gap-1 shadow">
+                                    <i class="fa-solid fa-plus text-[10px]"></i> Pedir
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderPromos() {
+            const container = document.getElementById('promos-container');
+            if (promos.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 bg-white/80 rounded-2xl border border-cream-200 p-4"><p class="text-sm font-bold text-olive-800">No hay promociones activas</p></div>`;
+                return;
+            }
+            container.innerHTML = promos.map(promo => {
+                const priceVES = (promo.priceUSD * bcvRate).toFixed(2);
+                const cartItem = cart.find(i => i.id === promo.id && i.type === 'promo');
+                const qtyInCart = cartItem ? cartItem.quantity : 0;
+                const fallbackImg = 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80';
+                const promoImg = promo.image || fallbackImg;
+                return `
+                    <div class="bg-white rounded-2xl p-4 border border-gold-500/30 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                        <img id="promo-img-${promo.id}" src="${promoImg}" class="w-full sm:w-28 h-24 object-cover rounded-xl">
+                        <div class="flex-1">
+                            <span class="bg-terracotta-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Promo</span>
+                            <h4 class="font-serif font-bold text-base text-olive-800 mt-1">${promo.title}</h4>
+                            <p class="text-xs text-olive-700 mt-0.5">${promo.description || ''}</p>
+                            <div class="mt-1 text-sm font-bold font-serif text-gold-600">$${promo.priceUSD.toFixed(2)} <span class="text-xs text-olive-600 font-sans font-normal">Bs. ${priceVES}</span></div>
+                        </div>
+                        <button onclick="triggerFlyAndAdd(event, '${promo.id}', 'promo', 1, '${escapeHtml(promo.title)}', ${promo.priceUSD}, '${promoImg}')" class="bg-gold-500 hover:bg-gold-600 text-olive-900 font-bold text-xs px-4 py-2 rounded-xl shadow">Pedir Promo</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderEvents() {
+            const container = document.getElementById('events-container');
+            if (events.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-10 bg-white/80 rounded-2xl border border-cream-200 p-4"><p class="text-sm font-bold text-olive-800">Próximamente nuevos eventos</p></div>`;
+                return;
+            }
+            container.innerHTML = events.map(ev => `
+                <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-cream-200 flex flex-col justify-between">
+                    ${ev.image ? `<img src="${ev.image}" class="w-full h-36 object-cover">` : ''}
+                    <div class="p-4">
+                        <span class="text-xs text-gold-600 font-semibold"><i class="fa-solid fa-calendar"></i> ${ev.date}</span>
+                        <h4 class="font-serif font-bold text-base text-olive-800 mt-1">${ev.title}</h4>
+                        <p class="text-xs text-olive-700/80 mt-1">${ev.description || ''}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Parabolic Flying Dish Animation
+        function triggerFlyAndAdd(event, id, type, qty, title, priceUSD, image, notes = '') {
+            event.stopPropagation();
+            let srcImgElem = document.getElementById(`${type}-img-${id}`);
+            let startX = event.clientX, startY = event.clientY;
+            if (srcImgElem) {
+                const rect = srcImgElem.getBoundingClientRect();
+                startX = rect.left + rect.width / 2;
+                startY = rect.top + rect.height / 2;
+            }
+            const targetElem = document.getElementById('cart-header-btn');
+            const targetRect = targetElem.getBoundingClientRect();
+            const targetX = targetRect.left + targetRect.width / 2;
+            const targetY = targetRect.top + targetRect.height / 2;
+
+            const flyer = document.createElement('img');
+            flyer.src = image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=150&q=80';
+            flyer.className = 'flying-dish';
+            const size = 60;
+            flyer.style.width = size + 'px'; flyer.style.height = size + 'px';
+            flyer.style.left = (startX - size / 2) + 'px'; flyer.style.top = (startY - size / 2) + 'px';
+            document.body.appendChild(flyer);
+
+            const duration = 700, startTime = performance.now();
+            function animateFly(now) {
+                const p = Math.min((now - startTime) / duration, 1);
+                const easeP = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+                const currentX = startX + (targetX - startX) * easeP;
+                const currentY = startY + (targetY - startY) * easeP - Math.sin(p * Math.PI) * 150;
+                flyer.style.left = (currentX - size / 2) + 'px';
+                flyer.style.top = (currentY - size / 2) + 'px';
+                flyer.style.transform = `scale(${1 - easeP * 0.6}) rotate(${easeP * 360}deg)`;
+                if (p < 1) requestAnimationFrame(animateFly);
+                else {
+                    flyer.remove();
+                    addToCart(id, type, qty, title, priceUSD, image, notes);
+                    targetElem.classList.remove('cart-bump');
+                    void targetElem.offsetWidth;
+                    targetElem.classList.add('cart-bump');
+                }
+            }
+            requestAnimationFrame(animateFly);
+        }
+
+        function openDishModal(dishId) {
+            const dish = dishes.find(d => d.id === dishId);
+            if (!dish) return;
+            const modal = document.getElementById('dish-modal');
+            const content = document.getElementById('dish-modal-content');
+            const priceVES = (dish.priceUSD * bcvRate).toFixed(2);
+            const fallbackImg = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80';
+            const dishImg = dish.image || fallbackImg;
+            const cartItem = cart.find(i => i.id === dish.id && i.type === 'dish');
+            const currentQty = cartItem ? cartItem.quantity : 1;
+
+            content.innerHTML = `
+                <div class="relative h-52 bg-olive-800">
+                    <img src="${dishImg}" class="w-full h-full object-cover">
+                    <button onclick="closeDishModal()" class="absolute top-3 right-3 bg-black/60 text-white w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-4 space-y-3">
+                    <h3 class="font-serif font-bold text-lg text-olive-800">${dish.name}</h3>
+                    <div class="text-lg font-bold font-serif text-gold-600">$${dish.priceUSD.toFixed(2)} <span class="text-xs text-olive-600 font-sans font-normal">Bs. ${priceVES}</span></div>
+                    <p class="text-xs text-olive-700">${dish.description || ''}</p>
+                    <div>
+                        <label class="block text-xs font-semibold text-olive-800 mb-1">Notas especiales</label>
+                        <input type="text" id="dish-modal-notes" value="${cartItem && cartItem.notes ? escapeHtml(cartItem.notes) : ''}" class="w-full p-2 text-xs border border-cream-300 rounded-lg">
+                    </div>
+                    <div class="flex items-center justify-between pt-2">
+                        <div class="flex items-center bg-cream-100 rounded-lg p-1 gap-2">
+                            <button onclick="adjustModalQty(-1)" class="w-7 h-7 bg-white rounded font-bold">-</button>
+                            <span id="modal-qty-display" class="font-bold text-xs w-5 text-center">${currentQty}</span>
+                            <button onclick="adjustModalQty(1)" class="w-7 h-7 bg-olive-800 text-white rounded font-bold">+</button>
+                        </div>
+                        <button onclick="confirmAddFromModal(event, '${dish.id}')" class="bg-olive-800 text-cream-50 px-4 py-2 rounded-xl text-xs font-bold shadow">Agregar al Pedido</button>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('translate-y-8');
+        }
+
+        function closeDishModal() {
+            document.getElementById('dish-modal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('dish-modal-content').classList.add('translate-y-8');
+        }
+
+        let tempModalQty = 1;
+        function adjustModalQty(delta) {
+            const display = document.getElementById('modal-qty-display');
+            if (!display) return;
+            tempModalQty = Math.max(1, parseInt(display.textContent) + delta);
+            display.textContent = tempModalQty;
+        }
+
+        function confirmAddFromModal(event, dishId) {
+            const dish = dishes.find(d => d.id === dishId);
+            if (!dish) return;
+            const notes = document.getElementById('dish-modal-notes').value.trim();
+            const qty = parseInt(document.getElementById('modal-qty-display').textContent) || 1;
+            triggerFlyAndAdd(event, dish.id, 'dish', qty, dish.name, dish.priceUSD, dish.image, notes);
+            closeDishModal();
+        }
+
+        function addToCart(id, type, qty, title, priceUSD, image, notes = '') {
+            const idx = cart.findIndex(item => item.id === id && item.type === type);
+            if (idx > -1) {
+                cart[idx].quantity += qty;
+                if (notes) cart[idx].notes = notes;
+            } else {
+                cart.push({ id, type, quantity: qty, title, priceUSD, image, notes });
+            }
+            showToast(`Añadido: ${title}`);
+            updateCartSummary();
+            renderDishes();
+            renderPromos();
+        }
+
+        function updateCartQuantity(id, type, delta) {
+            const idx = cart.findIndex(item => item.id === id && item.type === type);
+            if (idx > -1) {
+                cart[idx].quantity += delta;
+                if (cart[idx].quantity <= 0) cart.splice(idx, 1);
+            }
+            updateCartSummary();
+            renderDishes();
+            renderPromos();
+        }
+
+        function setServiceType(type) {
+            currentServiceType = type;
+            ['delivery', 'pickup', 'table'].forEach(t => {
+                const btn = document.getElementById(`btn-service-${t}`);
+                if (btn) btn.className = "p-2 sm:p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 border-cream-300 bg-white text-olive-800";
+            });
+            const activeBtn = document.getElementById(`btn-service-${type}`);
+            if (activeBtn) activeBtn.className = "p-2 sm:p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 border-gold-500 bg-olive-800 text-gold-400 font-bold";
+            
+            const addrField = document.getElementById('field-address-container');
+            const rowDevFee = document.getElementById('row-delivery-fee');
+            if (type === 'delivery') { addrField.classList.remove('hidden'); rowDevFee.classList.remove('hidden'); }
+            else { addrField.classList.add('hidden'); rowDevFee.classList.add('hidden'); }
+            updateCartSummary();
+        }
+
+        function updateCartSummary() {
+            const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
+            document.getElementById('header-cart-count').textContent = totalItems;
+            document.getElementById('header-cart-count').style.transform = totalItems > 0 ? 'scale(1)' : 'scale(0)';
+            document.getElementById('cart-floating-badge').textContent = totalItems;
+            
+            const floatingBar = document.getElementById('floating-cart-bar');
+            if (totalItems > 0) floatingBar.classList.remove('translate-y-full');
+            else floatingBar.classList.add('translate-y-full');
+
+            document.getElementById('floating-items-text').textContent = `${totalItems} ítem${totalItems !== 1 ? 's' : ''}`;
+
+            const subtotalUSD = cart.reduce((acc, item) => acc + (item.priceUSD * item.quantity), 0);
+            const deliveryFee = (currentServiceType === 'delivery' && totalItems > 0) ? deliveryFeeUSD : 0.00;
+            const totalUSD = subtotalUSD + deliveryFee;
+            const totalVES = totalUSD * bcvRate;
+
+            document.getElementById('floating-total-usd').textContent = `$${totalUSD.toFixed(2)}`;
+            document.getElementById('floating-total-ves').textContent = `Bs. ${totalVES.toFixed(2)}`;
+            document.getElementById('summary-subtotal-usd').textContent = `$${subtotalUSD.toFixed(2)}`;
+            document.getElementById('summary-delivery-usd').textContent = `$${deliveryFee.toFixed(2)}`;
+            document.getElementById('summary-total-usd').textContent = `$${totalUSD.toFixed(2)}`;
+            document.getElementById('summary-total-ves').textContent = `Bs. ${totalVES.toFixed(2)}`;
+
+            const itemsContainer = document.getElementById('cart-items-container');
+            if (cart.length === 0) {
+                itemsContainer.innerHTML = '<p class="text-xs text-olive-600/70 italic py-2 text-center">Carrito vacío</p>';
+                return;
+            }
+            itemsContainer.innerHTML = cart.map(item => `
+                <div class="flex items-center justify-between bg-white p-2 rounded-xl border border-cream-200 text-xs">
+                    <div>
+                        <span class="font-bold">${item.title}</span> ($${item.priceUSD.toFixed(2)})
+                        ${item.notes ? `<div class="text-[10px] text-olive-600">Nota: ${escapeHtml(item.notes)}</div>` : ''}
+                    </div>
+                    <div class="flex items-center gap-1 bg-cream-100 p-0.5 rounded">
+                        <button onclick="updateCartQuantity('${item.id}', '${item.type}', -1)" class="w-5 h-5 bg-white rounded text-xs font-bold">-</button>
+                        <span class="w-4 text-center font-bold">${item.quantity}</span>
+                        <button onclick="updateCartQuantity('${item.id}', '${item.type}', 1)" class="w-5 h-5 bg-olive-800 text-white rounded text-xs font-bold">+</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openCartModal() {
+            document.getElementById('cart-modal').classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('cart-modal-content').classList.remove('translate-y-full');
+        }
+
+        function closeCartModal() {
+            document.getElementById('cart-modal').classList.add('opacity-0', 'pointer-events-none');
+            document.getElementById('cart-modal-content').classList.add('translate-y-full');
+        }
+
+        function sendOrderToWhatsApp() {
+            if (cart.length === 0) { showToast('Carrito vacío'); return; }
+            const name = document.getElementById('customer-name').value.trim();
+            const phone = document.getElementById('customer-phone').value.trim();
+            const address = document.getElementById('customer-address').value.trim();
+            const notes = document.getElementById('order-notes').value.trim();
+            const payment = document.getElementById('payment-method').value;
+
+            if (!name || !phone) { showToast('Ingrese nombre y teléfono'); return; }
+            if (currentServiceType === 'delivery' && !address) { showToast('Ingrese dirección'); return; }
+
+            const subtotal = cart.reduce((acc, item) => acc + (item.priceUSD * item.quantity), 0);
+            const fee = currentServiceType === 'delivery' ? deliveryFeeUSD : 0;
+            const total = subtotal + fee;
+            const totalVes = total * bcvRate;
+
+            let msg = `*NUEVO PEDIDO - OLIVETTA RISTORANTE*\n`;
+            msg += `👤 Cliente: ${name}\n📞 Teléfono: ${phone}\n`;
+            if (currentServiceType === 'delivery') msg += `📍 Dirección: ${address}\n`;
+            msg += `💳 Pago: ${payment}\n--------------------\n`;
+            cart.forEach(i => { msg += `• ${i.quantity}x ${i.title} ($${(i.priceUSD * i.quantity).toFixed(2)})\n`; });
+            msg += `--------------------\n*TOTAL:* $${total.toFixed(2)} USD (Bs. ${totalVes.toFixed(2)})\n`;
+            if (notes) msg += `💬 Notas: ${notes}\n`;
+
+            window.open(`https://wa.me/${restaurantWhatsAppNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        let pendingAdminSection = 'dishes';
+        function requestAdminAccess(sec = 'dishes') {
+            pendingAdminSection = sec;
+            document.getElementById('admin-login-modal').classList.remove('opacity-0', 'pointer-events-none');
+            document.getElementById('admin-pass-input').value = '';
+        }
+        function closeAdminLoginModal() { document.getElementById('admin-login-modal').classList.add('opacity-0', 'pointer-events-none'); }
+        function verifyAdminPassword(e) {
+            e.preventDefault();
+            if (document.getElementById('admin-pass-input').value === ADMIN_PASSWORD_DEFAULT) {
+                closeAdminLoginModal();
+                openAdminModal(pendingAdminSection);
+            } else { showToast('Contraseña incorrecta'); }
+        }
+        function openAdminModal(sec = 'dishes') {
+            switchAdminTab(sec);
+            renderAdminLists();
+            document.getElementById('admin-modal').classList.remove('opacity-0', 'pointer-events-none');
+        }
+        function closeAdminModal() { document.getElementById('admin-modal').classList.add('opacity-0', 'pointer-events-none'); }
+        function switchAdminTab(tab) {
+            ['dishes', 'promos', 'events'].forEach(t => {
+                document.getElementById(`admin-sec-${t}`).classList.add('hidden');
+                document.getElementById(`admin-tab-${t}`).className = "flex-1 py-2.5 text-center border-b-2 border-transparent hover:bg-cream-200";
+            });
+            document.getElementById(`admin-sec-${tab}`).classList.remove('hidden');
+            document.getElementById(`admin-tab-${tab}`).className = "flex-1 py-2.5 text-center border-b-2 border-gold-500 bg-white font-bold";
+        }
+
+        function saveDishForm(e) {
+            e.preventDefault();
+            const id = document.getElementById('form-dish-id').value;
+            const name = document.getElementById('form-dish-name').value.trim();
+            const category = document.getElementById('form-dish-category').value;
+            const priceUSD = parseFloat(document.getElementById('form-dish-price').value);
+            const tag = document.getElementById('form-dish-tag').value.trim();
+            const image = document.getElementById('form-dish-image').value.trim();
+            const description = document.getElementById('form-dish-desc').value.trim();
+
+            if (id) {
+                const idx = dishes.findIndex(d => d.id === id);
+                if (idx > -1) dishes[idx] = { id, name, category, priceUSD, tag, image, description };
+            } else {
+                dishes.push({ id: 'dish_' + Date.now(), name, category, priceUSD, tag, image, description });
+            }
+            saveDishesStorage(); resetDishForm(); renderAdminLists(); renderDishes(); showToast('Plato guardado');
+        }
+        function editDish(id) {
+            const d = dishes.find(x => x.id === id);
+            if (!d) return;
+            document.getElementById('form-dish-id').value = d.id;
+            document.getElementById('form-dish-name').value = d.name;
+            document.getElementById('form-dish-category').value = d.category;
+            document.getElementById('form-dish-price').value = d.priceUSD;
+            document.getElementById('form-dish-tag').value = d.tag || '';
+            document.getElementById('form-dish-image').value = d.image || '';
+            document.getElementById('form-dish-desc').value = d.description || '';
+        }
+        function deleteDish(id) {
+            if (confirm('¿Eliminar plato?')) {
+                dishes = dishes.filter(x => x.id !== id);
+                saveDishesStorage(); renderAdminLists(); renderDishes(); showToast('Eliminado');
+            }
+        }
+        function resetDishForm() {
+            document.getElementById('form-dish-id').value = '';
+            document.getElementById('form-dish-name').value = '';
+            document.getElementById('form-dish-price').value = '';
+            document.getElementById('form-dish-tag').value = '';
+            document.getElementById('form-dish-image').value = '';
+            document.getElementById('form-dish-desc').value = '';
+        }
+
+        function savePromoForm(e) {
+            e.preventDefault();
+            const id = document.getElementById('form-promo-id').value;
+            const title = document.getElementById('form-promo-title').value.trim();
+            const priceUSD = parseFloat(document.getElementById('form-promo-price').value);
+            const image = document.getElementById('form-promo-image').value.trim();
+            const description = document.getElementById('form-promo-desc').value.trim();
+            if (id) {
+                const idx = promos.findIndex(p => p.id === id);
+                if (idx > -1) promos[idx] = { id, title, priceUSD, image, description };
+            } else { promos.push({ id: 'promo_' + Date.now(), title, priceUSD, image, description }); }
+            savePromosStorage(); resetPromoForm(); renderAdminLists(); renderPromos(); updateBadges(); showToast('Promo guardada');
+        }
+        function editPromo(id) {
+            const p = promos.find(x => x.id === id);
+            if (!p) return;
+            document.getElementById('form-promo-id').value = p.id;
+            document.getElementById('form-promo-title').value = p.title;
+            document.getElementById('form-promo-price').value = p.priceUSD;
+            document.getElementById('form-promo-image').value = p.image || '';
+            document.getElementById('form-promo-desc').value = p.description || '';
+        }
+        function deletePromo(id) {
+            if (confirm('¿Eliminar promo?')) {
+                promos = promos.filter(x => x.id !== id);
+                savePromosStorage(); renderAdminLists(); renderPromos(); updateBadges(); showToast('Eliminada');
+            }
+        }
+        function resetPromoForm() {
+            document.getElementById('form-promo-id').value = '';
+            document.getElementById('form-promo-title').value = '';
+            document.getElementById('form-promo-price').value = '';
+            document.getElementById('form-promo-image').value = '';
+            document.getElementById('form-promo-desc').value = '';
+        }
+
+        function saveEventForm(e) {
+            e.preventDefault();
+            const id = document.getElementById('form-event-id').value;
+            const title = document.getElementById('form-event-title').value.trim();
+            const date = document.getElementById('form-event-date').value.trim();
+            const priceUSD = parseFloat(document.getElementById('form-event-price').value) || 0;
+            const image = document.getElementById('form-event-image').value.trim();
+            const description = document.getElementById('form-event-desc').value.trim();
+            if (id) {
+                const idx = events.findIndex(ev => ev.id === id);
+                if (idx > -1) events[idx] = { id, title, date, priceUSD, image, description };
+            } else { events.push({ id: 'event_' + Date.now(), title, date, priceUSD, image, description }); }
+            saveEventsStorage(); resetEventForm(); renderAdminLists(); renderEvents(); updateBadges(); showToast('Evento guardado');
+        }
+        function editEvent(id) {
+            const ev = events.find(x => x.id === id);
+            if (!ev) return;
+            document.getElementById('form-event-id').value = ev.id;
+            document.getElementById('form-event-title').value = ev.title;
+            document.getElementById('form-event-date').value = ev.date;
+            document.getElementById('form-event-price').value = ev.priceUSD || 0;
+            document.getElementById('form-event-image').value = ev.image || '';
+            document.getElementById('form-event-desc').value = ev.description || '';
+        }
+        function deleteEvent(id) {
+            if (confirm('¿Eliminar evento?')) {
+                events = events.filter(x => x.id !== id);
+                saveEventsStorage(); renderAdminLists(); renderEvents(); updateBadges(); showToast('Eliminado');
+            }
+        }
+        function resetEventForm() {
+            document.getElementById('form-event-id').value = '';
+            document.getElementById('form-event-title').value = '';
+            document.getElementById('form-event-date').value = '';
+            document.getElementById('form-event-price').value = '';
+            document.getElementById('form-event-image').value = '';
+            document.getElementById('form-event-desc').value = '';
+        }
+
+        function renderAdminLists() {
+            document.getElementById('admin-dishes-list').innerHTML = dishes.map(d => `
+                <div class="flex items-center justify-between bg-white p-2 rounded-xl border border-cream-200 text-xs">
+                    <div><b>${d.name}</b> ($${d.priceUSD.toFixed(2)}) <span class="text-[10px] bg-cream-200 px-1 rounded">${d.category}</span></div>
+                    <div class="flex gap-1"><button onclick="editDish('${d.id}')" class="p-1"><i class="fa-solid fa-pen"></i></button><button onclick="deleteDish('${d.id}')" class="p-1 text-terracotta-500"><i class="fa-solid fa-trash"></i></button></div>
+                </div>
+            `).join('');
+            document.getElementById('admin-promos-list').innerHTML = promos.map(p => `
+                <div class="flex items-center justify-between bg-white p-2 rounded-xl border border-cream-200 text-xs">
+                    <div><b>${p.title}</b> ($${p.priceUSD.toFixed(2)})</div>
+                    <div class="flex gap-1"><button onclick="editPromo('${p.id}')" class="p-1"><i class="fa-solid fa-pen"></i></button><button onclick="deletePromo('${p.id}')" class="p-1 text-terracotta-500"><i class="fa-solid fa-trash"></i></button></div>
+                </div>
+            `).join('');
+            document.getElementById('admin-events-list').innerHTML = events.map(e => `
+                <div class="flex items-center justify-between bg-white p-2 rounded-xl border border-cream-200 text-xs">
+                    <div><b>${e.title}</b> (${e.date})</div>
+                    <div class="flex gap-1"><button onclick="editEvent('${e.id}')" class="p-1"><i class="fa-solid fa-pen"></i></button><button onclick="deleteEvent('${e.id}')" class="p-1 text-terracotta-500"><i class="fa-solid fa-trash"></i></button></div>
+                </div>
+            `).join('');
+        }
+
+        function handleImageUpload(event, targetInputId) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) { document.getElementById(targetInputId).value = e.target.result; showToast('Imagen cargada'); };
+            reader.readAsDataURL(file);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = msg;
+            toast.classList.remove('translate-x-full');
+            setTimeout(() => toast.classList.add('translate-x-full'), 2800);
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>
