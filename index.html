@@ -613,10 +613,10 @@
     <!-- APP JAVASCRIPT LOGIC -->
     <script>
         // Configuración de Supabase Storage
-        const SUPABASE_URL = 'https://tu-proyecto.supabase.co'; // Reemplaza con tu URL de Supabase
-        const SUPABASE_ANON_KEY = 'tu-clave-anon-aqui'; // Reemplaza con tu Key Anónima
+        const SUPABASE_URL = 'https://dcbyrxmfrgesffqlnsqu.supabase.co'; // Reemplaza con tu URL de Supabase
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYnlyeG1mcmdlc2ZmcWxuc3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0NjA3NzAsImV4cCI6MjEwODAzNjc3MH0.bkynQZifpgFtXUuNcgzZpEmCHLqNBODB49whrVeXQis'; // Reemplaza con tu Key Anónima
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const BUCKET_NAME = 'olivetta-media'; // Nombre del bucket creado en Supabase
+        const BUCKET_NAME = 'olivetta-web'; // Nombre del bucket creado en Supabase
 
         const ADMIN_PASSWORD_DEFAULT = 'olivetta2026';
         let bcvRate = 36.50;
@@ -626,7 +626,7 @@
         let cart = [];
         let currentServiceType = 'delivery';
         const deliveryFeeUSD = 3.00;
-        const restaurantWhatsAppNumber = '584240000000';
+        const restaurantWhatsAppNumber = '584248445789'; // Número de WhatsApp del restaurante (sin espacios ni guiones)
 
         const BCV_API_ENDPOINTS = [
             'https://ve.dolarapi.com/v1/dolares/oficial',
