@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS Client CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -98,18 +100,6 @@
         }
         .cart-bump {
             animation: cartBump 0.45s ease-out;
-        }
-        .sparkle-particle {
-            position: fixed;
-            z-index: 9998;
-            pointer-events: none;
-            background: radial-gradient(circle, #FFF 10%, #D4AF37 80%);
-            border-radius: 50%;
-            animation: sparkleFade 0.6s linear forwards;
-        }
-        @keyframes sparkleFade {
-            0% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(0.2) translate(var(--dx), var(--dy)); }
         }
     </style>
 </head>
@@ -207,7 +197,6 @@
                         class="w-full pl-9 pr-4 py-2.5 sm:py-3 bg-white border border-cream-300 rounded-xl sm:rounded-2xl text-xs sm:text-sm text-olive-800 placeholder-olive-800/40 focus:outline-none focus:border-gold-500 shadow-sm transition-all">
                 </div>
 
-                <!-- Category Horizontal Scroll with Smaller Compact Buttons -->
                 <div class="overflow-x-auto hide-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0 flex gap-1.5 py-1" id="categories-container">
                     <!-- Rendered by JS -->
                 </div>
@@ -483,12 +472,12 @@
                         </div>
 
                         <div>
-                            <label class="block text-[11px] font-bold text-olive-800 mb-1">URL de Imagen (o sube tu imagen)</label>
+                            <label class="block text-[11px] font-bold text-olive-800 mb-1">URL de Imagen / Video (o subir archivo)</label>
                             <div class="flex gap-2">
                                 <input type="url" id="form-dish-image" placeholder="https://..." class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none focus:border-gold-500">
                                 <label class="cursor-pointer bg-cream-200 hover:bg-cream-300 text-olive-800 px-3 py-2 rounded-lg text-xs font-semibold flex items-center shrink-0">
                                     <i class="fa-solid fa-upload mr-1"></i> Subir
-                                    <input type="file" accept="image/*" onchange="handleImageUpload(event, 'form-dish-image')" class="hidden">
+                                    <input type="file" accept="image/*,video/*" onchange="handleImageUpload(event, 'form-dish-image')" class="hidden">
                                 </label>
                             </div>
                         </div>
@@ -530,12 +519,12 @@
                         </div>
 
                         <div>
-                            <label class="block text-[11px] font-bold text-olive-800 mb-1">URL de Imagen / Banner</label>
+                            <label class="block text-[11px] font-bold text-olive-800 mb-1">URL de Imagen / Banner (o subir archivo)</label>
                             <div class="flex gap-2">
                                 <input type="url" id="form-promo-image" placeholder="https://..." class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
                                 <label class="cursor-pointer bg-cream-200 hover:bg-cream-300 text-olive-800 px-3 py-2 rounded-lg text-xs font-semibold flex items-center shrink-0">
                                     <i class="fa-solid fa-upload mr-1"></i> Subir
-                                    <input type="file" accept="image/*" onchange="handleImageUpload(event, 'form-promo-image')" class="hidden">
+                                    <input type="file" accept="image/*,video/*" onchange="handleImageUpload(event, 'form-promo-image')" class="hidden">
                                 </label>
                             </div>
                         </div>
@@ -582,12 +571,12 @@
                                 <input type="number" step="1" id="form-event-price" placeholder="0 (Si es libre)" class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
                             </div>
                             <div>
-                                <label class="block text-[11px] font-bold text-olive-800 mb-1">URL Imagen Banner</label>
+                                <label class="block text-[11px] font-bold text-olive-800 mb-1">URL Imagen / Video Banner (o subir)</label>
                                 <div class="flex gap-2">
                                     <input type="url" id="form-event-image" placeholder="https://..." class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
                                     <label class="cursor-pointer bg-cream-200 hover:bg-cream-300 text-olive-800 px-2.5 py-2 rounded-lg text-xs font-semibold flex items-center shrink-0">
                                         <i class="fa-solid fa-upload"></i>
-                                        <input type="file" accept="image/*" onchange="handleImageUpload(event, 'form-event-image')" class="hidden">
+                                        <input type="file" accept="image/*,video/*" onchange="handleImageUpload(event, 'form-event-image')" class="hidden">
                                     </label>
                                 </div>
                             </div>
@@ -623,6 +612,12 @@
 
     <!-- APP JAVASCRIPT LOGIC -->
     <script>
+        // Configuración de Supabase Storage
+        const SUPABASE_URL = 'https://tu-proyecto.supabase.co'; // Reemplaza con tu URL de Supabase
+        const SUPABASE_ANON_KEY = 'tu-clave-anon-aqui'; // Reemplaza con tu Key Anónima
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const BUCKET_NAME = 'olivetta-media'; // Nombre del bucket creado en Supabase
+
         const ADMIN_PASSWORD_DEFAULT = 'olivetta2026';
         let bcvRate = 36.50;
         let bcvLastUpdated = null;
@@ -643,7 +638,6 @@
         let promos = [];
         let events = [];
 
-        // Updated menu categories including Desayunos and Snacks with compact styling
         const menuCategories = [
             { id: 'all', name: 'Todos', icon: 'fa-utensils' },
             { id: 'desayunos', name: 'Desayunos', icon: 'fa-egg' },
@@ -721,10 +715,8 @@
         function updateBcvDisplay() {
             const display = document.getElementById('bcv-rate-display');
             const summaryRate = document.getElementById('summary-bcv-rate');
-            const input = document.getElementById('bcv-input');
             if (display) display.textContent = `Bs. ${bcvRate.toFixed(2)}`;
             if (summaryRate) summaryRate.textContent = `Bs. ${bcvRate.toFixed(2)} / $`;
-            if (input) input.value = bcvRate.toFixed(2);
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -754,7 +746,6 @@
             if (events.length > 0) { eventBadge.textContent = events.length; eventBadge.classList.remove('hidden'); } else { eventBadge.classList.add('hidden'); }
         }
 
-        // Compact smaller category buttons implementation
         function renderCategories() {
             const container = document.getElementById('categories-container');
             container.innerHTML = menuCategories.map(cat => `
@@ -813,12 +804,13 @@
                 const qtyInCart = cartItem ? cartItem.quantity : 0;
                 const fallbackImg = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80';
                 const dishImg = dish.image || fallbackImg;
+                const isVideo = dishImg.match(/\.(mp4|webm|ogg)$/i);
 
                 return `
                     <div id="dish-card-${dish.id}" class="bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm hover:shadow-md border border-cream-200/80 flex flex-col justify-between transition-all">
                         <div>
                             <div class="relative h-44 sm:h-48 overflow-hidden cursor-pointer bg-cream-100 group" onclick="openDishModal('${dish.id}')">
-                                <img id="dish-img-${dish.id}" src="${dishImg}" alt="${dish.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.src='${fallbackImg}'">
+                                ${isVideo ? `<video src="${dishImg}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" muted autoplay loop></video>` : `<img id="dish-img-${dish.id}" src="${dishImg}" alt="${dish.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.src='${fallbackImg}'">`}
                                 ${dish.tag ? `<span class="absolute top-2.5 left-2.5 bg-gold-500 text-olive-900 text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase shadow">${dish.tag}</span>` : ''}
                             </div>
                             <div class="p-3.5 sm:p-4 cursor-pointer" onclick="openDishModal('${dish.id}')">
@@ -858,13 +850,12 @@
             }
             container.innerHTML = promos.map(promo => {
                 const priceVES = (promo.priceUSD * bcvRate).toFixed(2);
-                const cartItem = cart.find(i => i.id === promo.id && i.type === 'promo');
-                const qtyInCart = cartItem ? cartItem.quantity : 0;
                 const fallbackImg = 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80';
                 const promoImg = promo.image || fallbackImg;
+                const isVideo = promoImg.match(/\.(mp4|webm|ogg)$/i);
                 return `
                     <div class="bg-white rounded-2xl p-4 border border-gold-500/30 flex flex-col sm:flex-row gap-4 justify-between items-center">
-                        <img id="promo-img-${promo.id}" src="${promoImg}" class="w-full sm:w-28 h-24 object-cover rounded-xl">
+                        ${isVideo ? `<video src="${promoImg}" class="w-full sm:w-28 h-24 object-cover rounded-xl" muted autoplay loop></video>` : `<img id="promo-img-${promo.id}" src="${promoImg}" class="w-full sm:w-28 h-24 object-cover rounded-xl">`}
                         <div class="flex-1">
                             <span class="bg-terracotta-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Promo</span>
                             <h4 class="font-serif font-bold text-base text-olive-800 mt-1">${promo.title}</h4>
@@ -883,19 +874,21 @@
                 container.innerHTML = `<div class="col-span-full text-center py-10 bg-white/80 rounded-2xl border border-cream-200 p-4"><p class="text-sm font-bold text-olive-800">Próximamente nuevos eventos</p></div>`;
                 return;
             }
-            container.innerHTML = events.map(ev => `
-                <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-cream-200 flex flex-col justify-between">
-                    ${ev.image ? `<img src="${ev.image}" class="w-full h-36 object-cover">` : ''}
-                    <div class="p-4">
-                        <span class="text-xs text-gold-600 font-semibold"><i class="fa-solid fa-calendar"></i> ${ev.date}</span>
-                        <h4 class="font-serif font-bold text-base text-olive-800 mt-1">${ev.title}</h4>
-                        <p class="text-xs text-olive-700/80 mt-1">${ev.description || ''}</p>
+            container.innerHTML = events.map(ev => {
+                const isVideo = ev.image && ev.image.match(/\.(mp4|webm|ogg)$/i);
+                return `
+                    <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-cream-200 flex flex-col justify-between">
+                        ${ev.image ? (isVideo ? `<video src="${ev.image}" class="w-full h-36 object-cover" muted autoplay loop></video>` : `<img src="${ev.image}" class="w-full h-36 object-cover">`) : ''}
+                        <div class="p-4">
+                            <span class="text-xs text-gold-600 font-semibold"><i class="fa-solid fa-calendar"></i> ${ev.date}</span>
+                            <h4 class="font-serif font-bold text-base text-olive-800 mt-1">${ev.title}</h4>
+                            <p class="text-xs text-olive-700/80 mt-1">${ev.description || ''}</p>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
-        // Parabolic Flying Dish Animation
         function triggerFlyAndAdd(event, id, type, qty, title, priceUSD, image, notes = '') {
             event.stopPropagation();
             let srcImgElem = document.getElementById(`${type}-img-${id}`);
@@ -911,7 +904,7 @@
             const targetY = targetRect.top + targetRect.height / 2;
 
             const flyer = document.createElement('img');
-            flyer.src = image || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=150&q=80';
+            flyer.src = (image && !image.match(/\.(mp4|webm|ogg)$/i)) ? image : 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=150&q=80';
             flyer.className = 'flying-dish';
             const size = 60;
             flyer.style.width = size + 'px'; flyer.style.height = size + 'px';
@@ -947,12 +940,13 @@
             const priceVES = (dish.priceUSD * bcvRate).toFixed(2);
             const fallbackImg = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80';
             const dishImg = dish.image || fallbackImg;
+            const isVideo = dishImg.match(/\.(mp4|webm|ogg)$/i);
             const cartItem = cart.find(i => i.id === dish.id && i.type === 'dish');
             const currentQty = cartItem ? cartItem.quantity : 1;
 
             content.innerHTML = `
                 <div class="relative h-52 bg-olive-800">
-                    <img src="${dishImg}" class="w-full h-full object-cover">
+                    ${isVideo ? `<video src="${dishImg}" class="w-full h-full object-cover" controls autoplay loop></video>` : `<img src="${dishImg}" class="w-full h-full object-cover">`}
                     <button onclick="closeDishModal()" class="absolute top-3 right-3 bg-black/60 text-white w-8 h-8 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="p-4 space-y-3">
@@ -1290,12 +1284,35 @@
             `).join('');
         }
 
-        function handleImageUpload(event, targetInputId) {
+        // Función para subir archivos multimedia (imágenes y videos) a Supabase Storage
+        async function handleImageUpload(event, targetInputId) {
             const file = event.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) { document.getElementById(targetInputId).value = e.target.result; showToast('Imagen cargada'); };
-            reader.readAsDataURL(file);
+
+            showToast('Subiendo archivo a Supabase Storage...');
+
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+                const filePath = `${fileName}`;
+
+                const { data, error } = await supabaseClient.storage
+                    .from(BUCKET_NAME)
+                    .upload(filePath, file);
+
+                if (error) throw error;
+
+                const { data: publicURLData } = supabaseClient.storage
+                    .from(BUCKET_NAME)
+                    .getPublicUrl(filePath);
+
+                document.getElementById(targetInputId).value = publicURLData.publicUrl;
+                showToast('¡Archivo subido con éxito!');
+
+            } catch (error) {
+                console.error('Error al subir archivo:', error.message);
+                showToast('Error al subir a Supabase. Revisa la consola.');
+            }
         }
 
         function showToast(msg) {
