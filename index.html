@@ -514,7 +514,7 @@
                             </div>
                             <div>
                                 <label class="block text-[11px] font-bold text-olive-800 mb-1">Precio Promocional ($ USD) *</label>
-                                <input type="number" step="0.01" id="form-promo-price" placeholder="20.00" required class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
+                                <input type="number" step="0.01" id="form-promo-price" placeholder="14.99" required class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
                             </div>
                         </div>
 
@@ -568,7 +568,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             <div>
                                 <label class="block text-[11px] font-bold text-olive-800 mb-1">Precio Reserva / Cover ($ USD)</label>
-                                <input type="number" step="1" id="form-event-price" placeholder="0 (Si es libre)" class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
+                                <input type="number" step="0.01" id="form-event-price" placeholder="0.00 (Si es libre)" class="w-full p-2 text-xs border border-cream-300 rounded-lg focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-[11px] font-bold text-olive-800 mb-1">URL Imagen / Video Banner (o subir)</label>
@@ -613,10 +613,10 @@
     <!-- APP JAVASCRIPT LOGIC -->
     <script>
         // Configuración de Supabase Storage
-        const SUPABASE_URL = 'https://dcbyrxmfrgesffqlnsqu.supabase.co'; // Reemplaza con tu URL de Supabase
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYnlyeG1mcmdlc2ZmcWxuc3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0NjA3NzAsImV4cCI6MjEwODAzNjc3MH0.bkynQZifpgFtXUuNcgzZpEmCHLqNBODB49whrVeXQis'; // Reemplaza con tu Key Anónima
+        const SUPABASE_URL = 'https://dcbyrxmfrgesffqlnsqu.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjYnlyeG1mcmdlc2ZmcWxuc3F1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0NjA3NzAsImV4cCI6MjEwODAzNjc3MH0.bkynQZifpgFtXUuNcgzZpEmCHLqNBODB49whrVeXQis';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const BUCKET_NAME = 'olivetta-web'; // Nombre del bucket creado en Supabase
+        const BUCKET_NAME = 'olivetta-web';
 
         const ADMIN_PASSWORD_DEFAULT = 'olivetta2026';
         let bcvRate = 36.50;
@@ -626,7 +626,7 @@
         let cart = [];
         let currentServiceType = 'delivery';
         const deliveryFeeUSD = 3.00;
-        const restaurantWhatsAppNumber = '584248445789'; // Número de WhatsApp del restaurante (sin espacios ni guiones)
+        const restaurantWhatsAppNumber = '584248445789';
 
         const BCV_API_ENDPOINTS = [
             'https://ve.dolarapi.com/v1/dolares/oficial',
@@ -1195,12 +1195,27 @@
             const priceUSD = parseFloat(document.getElementById('form-promo-price').value);
             const image = document.getElementById('form-promo-image').value.trim();
             const description = document.getElementById('form-promo-desc').value.trim();
+
+            if (isNaN(priceUSD) || priceUSD < 0) {
+                showToast('Por favor ingrese un precio válido');
+                return;
+            }
+
             if (id) {
                 const idx = promos.findIndex(p => p.id === id);
                 if (idx > -1) promos[idx] = { id, title, priceUSD, image, description };
-            } else { promos.push({ id: 'promo_' + Date.now(), title, priceUSD, image, description }); }
-            savePromosStorage(); resetPromoForm(); renderAdminLists(); renderPromos(); updateBadges(); showToast('Promo guardada');
+            } else {
+                promos.push({ id: 'promo_' + Date.now(), title, priceUSD, image, description });
+            }
+
+            savePromosStorage();
+            resetPromoForm();
+            renderAdminLists();
+            renderPromos();
+            updateBadges();
+            showToast('Promo guardada con éxito');
         }
+
         function editPromo(id) {
             const p = promos.find(x => x.id === id);
             if (!p) return;
@@ -1210,12 +1225,14 @@
             document.getElementById('form-promo-image').value = p.image || '';
             document.getElementById('form-promo-desc').value = p.description || '';
         }
+
         function deletePromo(id) {
             if (confirm('¿Eliminar promo?')) {
                 promos = promos.filter(x => x.id !== id);
                 savePromosStorage(); renderAdminLists(); renderPromos(); updateBadges(); showToast('Eliminada');
             }
         }
+
         function resetPromoForm() {
             document.getElementById('form-promo-id').value = '';
             document.getElementById('form-promo-title').value = '';
@@ -1238,6 +1255,7 @@
             } else { events.push({ id: 'event_' + Date.now(), title, date, priceUSD, image, description }); }
             saveEventsStorage(); resetEventForm(); renderAdminLists(); renderEvents(); updateBadges(); showToast('Evento guardado');
         }
+
         function editEvent(id) {
             const ev = events.find(x => x.id === id);
             if (!ev) return;
@@ -1248,12 +1266,14 @@
             document.getElementById('form-event-image').value = ev.image || '';
             document.getElementById('form-event-desc').value = ev.description || '';
         }
+
         function deleteEvent(id) {
             if (confirm('¿Eliminar evento?')) {
                 events = events.filter(x => x.id !== id);
                 saveEventsStorage(); renderAdminLists(); renderEvents(); updateBadges(); showToast('Eliminado');
             }
         }
+
         function resetEventForm() {
             document.getElementById('form-event-id').value = '';
             document.getElementById('form-event-title').value = '';
@@ -1284,7 +1304,6 @@
             `).join('');
         }
 
-        // Función para subir archivos multimedia (imágenes y videos) a Supabase Storage
         async function handleImageUpload(event, targetInputId) {
             const file = event.target.files[0];
             if (!file) return;
