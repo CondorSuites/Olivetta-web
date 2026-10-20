@@ -650,18 +650,54 @@
             { id: 'bebidas', name: 'Bebidas', icon: 'fa-wine-glass' }
         ];
 
-        function loadStorageData() {
-            const savedDishes = localStorage.getItem('olivetta_dishes');
-            if (savedDishes) { try { dishes = JSON.parse(savedDishes); } catch(e) { dishes = []; } }
-            const savedPromos = localStorage.getItem('olivetta_promos');
-            if (savedPromos) { try { promos = JSON.parse(savedPromos); } catch(e) { promos = []; } }
-            const savedEvents = localStorage.getItem('olivetta_events');
-            if (savedEvents) { try { events = JSON.parse(savedEvents); } catch(e) { events = []; } }
-        }
+        // Sincronización con Base de Datos de Supabase
+        async function loadStorageData() {
+            try {
+                const { data: dishesData, error: dishesErr } = await supabaseClient.from('dishes').select('*');
+                if (!dishesErr && dishesData) {
+                    dishes = dishesData.map(d => ({
+                        id: d.id,
+                        name: d.name,
+                        category: d.category,
+                        priceUSD: parseFloat(d.price_usd),
+                        tag: d.tag,
+                        image: d.image,
+                        description: d.description
+                    }));
+                }
 
-        function saveDishesStorage() { localStorage.setItem('olivetta_dishes', JSON.stringify(dishes)); }
-        function savePromosStorage() { localStorage.setItem('olivetta_promos', JSON.stringify(promos)); }
-        function saveEventsStorage() { localStorage.setItem('olivetta_events', JSON.stringify(events)); }
+                const { data: promosData, error: promosErr } = await supabaseClient.from('promos').select('*');
+                if (!promosErr && promosData) {
+                    promos = promosData.map(p => ({
+                        id: p.id,
+                        title: p.title,
+                        priceUSD: parseFloat(p.price_usd),
+                        image: p.image,
+                        description: p.description
+                    }));
+                }
+
+                const { data: eventsData, error: eventsErr } = await supabaseClient.from('events').select('*');
+                if (!eventsErr && eventsData) {
+                    events = eventsData.map(e => ({
+                        id: e.id,
+                        title: e.title,
+                        date: e.date,
+                        priceUSD: parseFloat(e.price_usd),
+                        image: e.image,
+                        description: e.description
+                    }));
+                }
+            } catch (err) {
+                console.error("Error cargando desde Supabase:", err);
+            }
+
+            renderCategories();
+            renderDishes();
+            renderPromos();
+            renderEvents();
+            updateBadges();
+        }
 
         async function fetchBCVRate(manualTrigger = false) {
             const refreshIcon = document.getElementById('bcv-refresh-icon');
@@ -719,15 +755,10 @@
             if (summaryRate) summaryRate.textContent = `Bs. ${bcvRate.toFixed(2)} / $`;
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            loadStorageData();
-            fetchBCVRate();
-            setInterval(fetchBCVRate, 300000);
-            renderCategories();
-            renderDishes();
-            renderPromos();
-            renderEvents();
-            updateBadges();
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadStorageData();
+            await fetchBCVRate();
+            setInterval(() => fetchBCVRate(), 300000);
         });
 
         function switchMainTab(tab) {
@@ -1184,24 +1215,32 @@
             document.getElementById(`admin-tab-${tab}`).className = "flex-1 py-2.5 text-center border-b-2 border-gold-500 bg-white font-bold";
         }
 
-        function saveDishForm(e) {
+        async function saveDishForm(e) {
             e.preventDefault();
-            const id = document.getElementById('form-dish-id').value;
+            const id = document.getElementById('form-dish-id').value || 'dish_' + Date.now();
             const name = document.getElementById('form-dish-name').value.trim();
             const category = document.getElementById('form-dish-category').value;
-            const priceUSD = parseFloat(document.getElementById('form-dish-price').value);
+            const price_usd = parseFloat(document.getElementById('form-dish-price').value);
             const tag = document.getElementById('form-dish-tag').value.trim();
             const image = document.getElementById('form-dish-image').value.trim();
             const description = document.getElementById('form-dish-desc').value.trim();
 
-            if (id) {
-                const idx = dishes.findIndex(d => d.id === id);
-                if (idx > -1) dishes[idx] = { id, name, category, priceUSD, tag, image, description };
-            } else {
-                dishes.push({ id: 'dish_' + Date.now(), name, category, priceUSD, tag, image, description });
+            const { error } = await supabaseClient.from('dishes').upsert({
+                id, name, category, price_usd, tag, image, description
+            });
+
+            if (error) {
+                showToast('Error al guardar en Supabase');
+                console.error(error);
+                return;
             }
-            saveDishesStorage(); resetDishForm(); renderAdminLists(); renderDishes(); showToast('Plato guardado');
+
+            resetDishForm();
+            await loadStorageData();
+            renderAdminLists();
+            showToast('¡Plato guardado y sincronizado!');
         }
+
         function editDish(id) {
             const d = dishes.find(x => x.id === id);
             if (!d) return;
@@ -1213,12 +1252,20 @@
             document.getElementById('form-dish-image').value = d.image || '';
             document.getElementById('form-dish-desc').value = d.description || '';
         }
-        function deleteDish(id) {
+
+        async function deleteDish(id) {
             if (confirm('¿Eliminar plato?')) {
-                dishes = dishes.filter(x => x.id !== id);
-                saveDishesStorage(); renderAdminLists(); renderDishes(); showToast('Eliminado');
+                const { error } = await supabaseClient.from('dishes').delete().eq('id', id);
+                if (!error) {
+                    await loadStorageData();
+                    renderAdminLists();
+                    showToast('Plato eliminado');
+                } else {
+                    showToast('Error al eliminar');
+                }
             }
         }
+
         function resetDishForm() {
             document.getElementById('form-dish-id').value = '';
             document.getElementById('form-dish-name').value = '';
@@ -1228,32 +1275,33 @@
             document.getElementById('form-dish-desc').value = '';
         }
 
-        function savePromoForm(e) {
+        async function savePromoForm(e) {
             e.preventDefault();
-            const id = document.getElementById('form-promo-id').value;
+            const id = document.getElementById('form-promo-id').value || 'promo_' + Date.now();
             const title = document.getElementById('form-promo-title').value.trim();
-            const priceUSD = parseFloat(document.getElementById('form-promo-price').value);
+            const price_usd = parseFloat(document.getElementById('form-promo-price').value);
             const image = document.getElementById('form-promo-image').value.trim();
             const description = document.getElementById('form-promo-desc').value.trim();
 
-            if (isNaN(priceUSD) || priceUSD < 0) {
+            if (isNaN(price_usd) || price_usd < 0) {
                 showToast('Por favor ingrese un precio válido');
                 return;
             }
 
-            if (id) {
-                const idx = promos.findIndex(p => p.id === id);
-                if (idx > -1) promos[idx] = { id, title, priceUSD, image, description };
-            } else {
-                promos.push({ id: 'promo_' + Date.now(), title, priceUSD, image, description });
+            const { error } = await supabaseClient.from('promos').upsert({
+                id, title, price_usd, image, description
+            });
+
+            if (error) {
+                showToast('Error al guardar promo');
+                return;
             }
 
-            savePromosStorage();
             resetPromoForm();
+            await loadStorageData();
             renderAdminLists();
-            renderPromos();
             updateBadges();
-            showToast('Promo guardada con éxito');
+            showToast('¡Promo guardada y sincronizada!');
         }
 
         function editPromo(id) {
@@ -1266,10 +1314,15 @@
             document.getElementById('form-promo-desc').value = p.description || '';
         }
 
-        function deletePromo(id) {
+        async function deletePromo(id) {
             if (confirm('¿Eliminar promo?')) {
-                promos = promos.filter(x => x.id !== id);
-                savePromosStorage(); renderAdminLists(); renderPromos(); updateBadges(); showToast('Eliminada');
+                const { error } = await supabaseClient.from('promos').delete().eq('id', id);
+                if (!error) {
+                    await loadStorageData();
+                    renderAdminLists();
+                    updateBadges();
+                    showToast('Promo eliminada');
+                }
             }
         }
 
@@ -1281,19 +1334,29 @@
             document.getElementById('form-promo-desc').value = '';
         }
 
-        function saveEventForm(e) {
+        async function saveEventForm(e) {
             e.preventDefault();
-            const id = document.getElementById('form-event-id').value;
+            const id = document.getElementById('form-event-id').value || 'event_' + Date.now();
             const title = document.getElementById('form-event-title').value.trim();
             const date = document.getElementById('form-event-date').value.trim();
-            const priceUSD = parseFloat(document.getElementById('form-event-price').value) || 0;
+            const price_usd = parseFloat(document.getElementById('form-event-price').value) || 0;
             const image = document.getElementById('form-event-image').value.trim();
             const description = document.getElementById('form-event-desc').value.trim();
-            if (id) {
-                const idx = events.findIndex(ev => ev.id === id);
-                if (idx > -1) events[idx] = { id, title, date, priceUSD, image, description };
-            } else { events.push({ id: 'event_' + Date.now(), title, date, priceUSD, image, description }); }
-            saveEventsStorage(); resetEventForm(); renderAdminLists(); renderEvents(); updateBadges(); showToast('Evento guardado');
+
+            const { error } = await supabaseClient.from('events').upsert({
+                id, title, date, price_usd, image, description
+            });
+
+            if (error) {
+                showToast('Error al guardar evento');
+                return;
+            }
+
+            resetEventForm();
+            await loadStorageData();
+            renderAdminLists();
+            updateBadges();
+            showToast('¡Evento guardado y sincronizado!');
         }
 
         function editEvent(id) {
@@ -1307,10 +1370,15 @@
             document.getElementById('form-event-desc').value = ev.description || '';
         }
 
-        function deleteEvent(id) {
+        async function deleteEvent(id) {
             if (confirm('¿Eliminar evento?')) {
-                events = events.filter(x => x.id !== id);
-                saveEventsStorage(); renderAdminLists(); renderEvents(); updateBadges(); showToast('Eliminado');
+                const { error } = await supabaseClient.from('events').delete().eq('id', id);
+                if (!error) {
+                    await loadStorageData();
+                    renderAdminLists();
+                    updateBadges();
+                    showToast('Evento eliminado');
+                }
             }
         }
 
