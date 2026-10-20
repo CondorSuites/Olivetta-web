@@ -854,18 +854,58 @@
                 const promoImg = promo.image || fallbackImg;
                 const isVideo = promoImg.match(/\.(mp4|webm|ogg)$/i);
                 return `
-                    <div class="bg-white rounded-2xl p-4 border border-gold-500/30 flex flex-col sm:flex-row gap-4 justify-between items-center">
-                        ${isVideo ? `<video src="${promoImg}" class="w-full sm:w-28 h-24 object-cover rounded-xl" muted autoplay loop></video>` : `<img id="promo-img-${promo.id}" src="${promoImg}" class="w-full sm:w-28 h-24 object-cover rounded-xl">`}
+                    <div class="bg-white rounded-2xl p-4 border border-gold-500/30 flex flex-col sm:flex-row gap-4 justify-between items-center shadow-sm">
+                        <div class="cursor-pointer group shrink-0 w-full sm:w-32 h-28 overflow-hidden rounded-xl bg-cream-100 relative" onclick="openPromoModal('${promo.id}')">
+                            ${isVideo ? 
+                                `<video src="${promoImg}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" muted autoplay loop></video>` : 
+                                `<img id="promo-img-${promo.id}" src="${promoImg}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">`
+                            }
+                            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1">
+                                <i class="fa-solid fa-magnifying-glass-plus"></i> Ver
+                            </div>
+                        </div>
                         <div class="flex-1">
                             <span class="bg-terracotta-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Promo</span>
                             <h4 class="font-serif font-bold text-base text-olive-800 mt-1">${promo.title}</h4>
                             <p class="text-xs text-olive-700 mt-0.5">${promo.description || ''}</p>
                             <div class="mt-1 text-sm font-bold font-serif text-gold-600">$${promo.priceUSD.toFixed(2)} <span class="text-xs text-olive-600 font-sans font-normal">Bs. ${priceVES}</span></div>
                         </div>
-                        <button onclick="triggerFlyAndAdd(event, '${promo.id}', 'promo', 1, '${escapeHtml(promo.title)}', ${promo.priceUSD}, '${promoImg}')" class="bg-gold-500 hover:bg-gold-600 text-olive-900 font-bold text-xs px-4 py-2 rounded-xl shadow">Pedir Promo</button>
+                        <button onclick="triggerFlyAndAdd(event, '${promo.id}', 'promo', 1, '${escapeHtml(promo.title)}', ${promo.priceUSD}, '${promoImg}')" class="bg-gold-500 hover:bg-gold-600 text-olive-900 font-bold text-xs px-4 py-2.5 rounded-xl shadow shrink-0">Pedir Promo</button>
                     </div>
                 `;
             }).join('');
+        }
+
+        function openPromoModal(promoId) {
+            const promo = promos.find(p => p.id === promoId);
+            if (!promo) return;
+            const modal = document.getElementById('dish-modal');
+            const content = document.getElementById('dish-modal-content');
+            const priceVES = (promo.priceUSD * bcvRate).toFixed(2);
+            const fallbackImg = 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80';
+            const promoImg = promo.image || fallbackImg;
+            const isVideo = promoImg.match(/\.(mp4|webm|ogg)$/i);
+
+            content.innerHTML = `
+                <div class="relative bg-olive-900 flex items-center justify-center max-h-[70vh] overflow-hidden">
+                    ${isVideo ? 
+                        `<video src="${promoImg}" class="w-full max-h-[60vh] object-contain" controls autoplay loop></video>` : 
+                        `<img src="${promoImg}" class="w-full max-h-[60vh] object-contain">`
+                    }
+                    <button onclick="closeDishModal()" class="absolute top-3 right-3 bg-black/70 text-white w-9 h-9 rounded-full flex items-center justify-center hover:bg-black transition-colors"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <div class="p-5 space-y-3 bg-cream-50">
+                    <span class="bg-terracotta-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full uppercase">Promoción Especial</span>
+                    <h3 class="font-serif font-bold text-xl text-olive-800">${promo.title}</h3>
+                    <div class="text-lg font-bold font-serif text-gold-600">$${promo.priceUSD.toFixed(2)} <span class="text-xs text-olive-600 font-sans font-normal">Bs. ${priceVES}</span></div>
+                    <p class="text-xs sm:text-sm text-olive-700/90 leading-relaxed">${promo.description || ''}</p>
+                    <div class="pt-2 flex justify-end">
+                        <button onclick="closeDishModal()" class="bg-olive-800 text-cream-50 px-5 py-2.5 rounded-xl text-xs font-bold shadow hover:bg-olive-700 transition-colors">Cerrar</button>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            content.classList.remove('translate-y-8');
         }
 
         function renderEvents() {
