@@ -650,11 +650,35 @@
             { id: 'bebidas', name: 'Bebidas', icon: 'fa-wine-glass' }
         ];
 
+        // Platos iniciales por defecto si la base de datos está vacía
+        const defaultDishes = [
+            {
+                id: 'dish_1',
+                name: 'Tagliatelle al Tartufo',
+                category: 'pastas',
+                priceUSD: 16.50,
+                tag: 'Recomendado',
+                image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80',
+                description: 'Pasta artesanal con crema de trufa negra, champiñones frescos y queso parmesano Reggiano.'
+            },
+            {
+                id: 'dish_2',
+                name: 'Pizza Margherita DOC',
+                category: 'pizzas',
+                priceUSD: 12.00,
+                tag: 'Popular',
+                image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80',
+                description: 'Salsa de tomate San Marzano, fior di latte, albahaca fresca y aceite de oliva virgen extra.'
+            }
+        ];
+
         // Sincronización con Base de Datos de Supabase
         async function loadStorageData() {
             try {
+                // Cargar platos desde Supabase
                 const { data: dishesData, error: dishesErr } = await supabaseClient.from('dishes').select('*');
-                if (!dishesErr && dishesData) {
+                
+                if (!dishesErr && dishesData && dishesData.length > 0) {
                     dishes = dishesData.map(d => ({
                         id: d.id,
                         name: d.name,
@@ -664,8 +688,24 @@
                         image: d.image,
                         description: d.description
                     }));
+                } else {
+                    // Si la tabla está vacía, usamos los platos predeterminados
+                    dishes = defaultDishes;
+                    // Intentamos insertar los platos base en Supabase automáticamente
+                    for (const item of defaultDishes) {
+                        await supabaseClient.from('dishes').upsert({
+                            id: item.id,
+                            name: item.name,
+                            category: item.category,
+                            price_usd: item.priceUSD,
+                            tag: item.tag,
+                            image: item.image,
+                            description: item.description
+                        });
+                    }
                 }
 
+                // Cargar promos desde Supabase
                 const { data: promosData, error: promosErr } = await supabaseClient.from('promos').select('*');
                 if (!promosErr && promosData) {
                     promos = promosData.map(p => ({
@@ -677,6 +717,7 @@
                     }));
                 }
 
+                // Cargar eventos desde Supabase
                 const { data: eventsData, error: eventsErr } = await supabaseClient.from('events').select('*');
                 if (!eventsErr && eventsData) {
                     events = eventsData.map(e => ({
@@ -690,6 +731,7 @@
                 }
             } catch (err) {
                 console.error("Error cargando desde Supabase:", err);
+                if (dishes.length === 0) dishes = defaultDishes;
             }
 
             renderCategories();
